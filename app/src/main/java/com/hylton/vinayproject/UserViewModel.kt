@@ -31,9 +31,4 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteAllUsers() = viewModelScope.launch {
         repository.deleteAllUsers()
     }
-
-    fun fetchJsonData() = viewModelScope.launch {
-        repository.returnArray(url)
-        //repository.getResultFromApi()
-    }
 }

@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp"
-        android:background="#D6F7FF"
-        tools:context=".MainActivity">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#D6F7FF"
+    tools:context=".MainActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,23 +15,63 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:gravity="center"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="8dp">
+            tools:context=".MainActivity">
 
-            <TextView
-                android:id="@+id/location_text_view"
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="24sp"
-                android:text="Worcester"/>
+                android:padding="16dp">
 
-            <TextView
-                android:id="@+id/temperature_text_view"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="60 degrees F"/>
+                <!--https://www.skcript.com/svr/how-to-make-a-circular-image-view-in-android-without-third-party-library/-->
+                <de.hdodenhof.circleimageview.CircleImageView
+                    tools:src="@drawable/ic_launcher_background"
+                    android:id="@+id/image_view"
+                    android:layout_width="68dp"
+                    android:layout_height="68dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
+                    app:civ_border_color="#FF000000"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingLeft="8dp"
+                    android:paddingStart="8dp"
+                    android:layout_toRightOf="@id/image_view"
+                    android:layout_toEndOf="@id/image_view" >
+
+                    <TextView
+                        android:id="@+id/city_text_field"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="Worcester"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/feels_like_text_field"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="feels like 20 degrees"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/weather_desc_text_field"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="Sunny"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/temp_text_field"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="78 degrees"/>
+                </LinearLayout>
+
+            </RelativeLayout>
 
         </LinearLayout>
 
