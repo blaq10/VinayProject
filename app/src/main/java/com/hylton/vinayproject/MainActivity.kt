@@ -1,12 +1,17 @@
 package com.hylton.vinayproject
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
@@ -16,6 +21,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.content.getSystemService
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,6 +31,7 @@ import com.android.volley.RequestQueue
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
+import com.google.android.gms.location.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.squareup.picasso.Picasso
 import kotlinx.coroutines.*
@@ -35,10 +42,14 @@ import org.json.JSONException
 const val API_KEY = "c8b6581188030b2fde6f306360757296"
 const val PERMISSION_ID = 1
 
-class MainActivity : AppCompatActivity(), UserCustomAdapter.OnUserClickListener {
+class MainActivity : AppCompatActivity() {
+
+    var longitude: Double = 0.0
+    var latitude: Double = 0.0
 
     private val newUserActivityRequestCode = 1
-    var baseUrl: String = "http://api.weatherstack.com/current?access_key=" + API_KEY + "&query=New York&units=f&interval=6"
+    // latitude and longitude
+    var baseUrl: String = "http://api.weatherstack.com/current?access_key=" + API_KEY + "&query=" + latitude + "," + longitude + "&units=f&interval=6"
 
     private lateinit var locationTextView: TextView
     private lateinit var temperatureTextView: TextView
@@ -54,9 +65,13 @@ class MainActivity : AppCompatActivity(), UserCustomAdapter.OnUserClickListener 
     private lateinit var fab: FloatingActionButton
     private lateinit var recyclerView: RecyclerView
 
+    private lateinit var mFusedLocationClient: FusedLocationProviderClient
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         requestQueue = Volley.newRequestQueue(this)
         locationTextView = findViewById(R.id.city_text_field)
@@ -81,11 +96,15 @@ class MainActivity : AppCompatActivity(), UserCustomAdapter.OnUserClickListener 
             startActivityForResult(intent, newUserActivityRequestCode)
         }
         CoroutineScope(IO).launch {
-            //returnArray(baseUrl)
+            returnArray(baseUrl)
         }
+        getLastLocation()
     }
 
     private fun returnArray(url: String) {
+
+        Log.d("Alele", "Lat" + latitude.toString())
+        Log.d("Alele", "Long" + longitude.toString())
 
         Log.d("Alele", "returnArray(url)")
         val arrayList = mutableListOf<String>()
@@ -149,8 +168,8 @@ class MainActivity : AppCompatActivity(), UserCustomAdapter.OnUserClickListener 
     }
 
     private fun setText(input: MutableList<String>){
-        locationTextView.text = input[0]
-        temperatureTextView.text = input[1]
+        locationTextView.text = longitude.toString()
+        temperatureTextView.text = latitude.toString()
         feelsLikeTextView.text = input[2]
         weatherDescriptionTextView.text = "feels like " + input[3]
         Picasso.get().load(input[4]).into(imageView)
@@ -169,12 +188,80 @@ class MainActivity : AppCompatActivity(), UserCustomAdapter.OnUserClickListener 
 
     // This method will request our necessary permissions to the user if not granted
     private fun requestPermissions(){
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_ID)
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_ID
+        )
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == PERMISSION_ID){
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                // Granted. Start getting the location information
+                getLastLocation()
+            }
+        }
+    }
+
+    private fun isLocationEnabled() : Boolean{
+        var locationManager : LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        var gpsProvider = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        var networkProvider = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
+        return gpsProvider || networkProvider
     }
 
     // This returns the user's location, Longitude and Latitude
-    private fun userLocation(){
+    @SuppressLint("MissingPermission")
+    private fun getLastLocation(){
+        if (checkPermissions()){
+            if (isLocationEnabled()){
+                mFusedLocationClient.lastLocation.addOnCompleteListener(this){ task ->
+                    var location: Location? = task.result
 
+                    if (location == null){
+                        requestNewLocationData()
+                    }
+                    else{
+                        longitude = location.longitude
+                        latitude = location.latitude
+                    }
+                }
+            }
+            else{
+                Toast.makeText(applicationContext, "Turn On Location", Toast.LENGTH_LONG).show()
+                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                startActivity(intent)
+            }
+        }
+        else {
+            requestPermissions()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun requestNewLocationData(){
+        var locationRequest = LocationRequest()
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        locationRequest.interval = 0
+        locationRequest.fastestInterval = 0
+        locationRequest.numUpdates = 1
+
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        mFusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.myLooper()
+        )
+    }
+
+    private val locationCallback = object : LocationCallback(){
+        override fun onLocationResult(locationResult: LocationResult?) {
+            val result = locationResult?.lastLocation
+
+            longitude = result!!.longitude
+            latitude = result!!.latitude
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -211,9 +298,5 @@ class MainActivity : AppCompatActivity(), UserCustomAdapter.OnUserClickListener 
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onUserClick(position: Int) {
-        Toast.makeText(this@MainActivity, position, Toast.LENGTH_SHORT).show()
     }
 }
