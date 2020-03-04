@@ -36,6 +36,7 @@ import com.squareup.picasso.Picasso
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Main
 import org.json.JSONException
+import kotlin.text.Typography.degree
 
 const val API_KEY = "c8b6581188030b2fde6f306360757296"
 const val PERMISSION_ID = 1
@@ -97,14 +98,12 @@ class MainActivity : AppCompatActivity() {
 
         CoroutineScope(Main).launch {
             getLastLocation()
-            delay(1000)
             returnArray()
         }
     }
 
-    suspend private fun returnArray() {
-
-        delay(5000)
+    private suspend fun returnArray()  = GlobalScope.launch {
+        delay(1000)
         Log.d("Alele", "Lat" + latitude.toString())
         Log.d("Alele", "Long" + longitude.toString())
 
@@ -171,10 +170,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setText(input: MutableList<String>){
-        locationTextView.text = longitude.toString()
-        temperatureTextView.text = latitude.toString()
-        feelsLikeTextView.text = input[2]
-        weatherDescriptionTextView.text = "feels like " + input[3]
+        locationTextView.text = getCityName()
+        temperatureTextView.text = "The temp is ${input[1]} " + degree
+        feelsLikeTextView.text = "feels like " + input[2] + degree
+        weatherDescriptionTextView.text = "Weather is " + input[3]
         Picasso.get().load(input[4]).into(imageView)
     }
 
@@ -216,7 +215,7 @@ class MainActivity : AppCompatActivity() {
 
     // This returns the user's location, Longitude and Latitude
     @SuppressLint("MissingPermission")
-    private fun getLastLocation(){
+    private fun getLastLocation() {
         if (checkPermissions()){
             if (isLocationEnabled()){
                 mFusedLocationClient.lastLocation.addOnCompleteListener(this){ task ->
@@ -248,7 +247,7 @@ class MainActivity : AppCompatActivity() {
     private fun setCityName(location: Location) {
         val lat = location.latitude
         val lon = location.longitude
-        var geocoder: Geocoder = Geocoder(this)
+        val geocoder = Geocoder(this)
 
         val addressList = geocoder.getFromLocation(lat, lon, 1)
         city = addressList[0].locality

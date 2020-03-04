@@ -25,7 +25,7 @@ class UserCustomAdapter internal constructor(context: Context) : RecyclerView.Ad
         holder.lastName.text = currentUser.lastName
         holder.email.text = currentUser.email
 
-        holder.itemView.setOnClickListener{view: View? ->
+        holder.itemView.setOnClickListener{
 
         }
     }
