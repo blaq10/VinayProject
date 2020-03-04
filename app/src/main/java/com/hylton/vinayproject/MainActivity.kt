@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
@@ -16,12 +17,10 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
-import androidx.core.content.getSystemService
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -35,7 +34,6 @@ import com.google.android.gms.location.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.squareup.picasso.Picasso
 import kotlinx.coroutines.*
-import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import org.json.JSONException
 
@@ -47,9 +45,10 @@ class MainActivity : AppCompatActivity() {
     var longitude: Double = 0.0
     var latitude: Double = 0.0
 
+    var city = ""
+
     private val newUserActivityRequestCode = 1
-    // latitude and longitude
-    var baseUrl: String = "http://api.weatherstack.com/current?access_key=" + API_KEY + "&query=" + latitude + "," + longitude + "&units=f&interval=6"
+
 
     private lateinit var locationTextView: TextView
     private lateinit var temperatureTextView: TextView
@@ -95,23 +94,27 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this@MainActivity, AddUserActivity::class.java)
             startActivityForResult(intent, newUserActivityRequestCode)
         }
-        CoroutineScope(IO).launch {
-            returnArray(baseUrl)
+
+        CoroutineScope(Main).launch {
+            getLastLocation()
+            delay(1000)
+            returnArray()
         }
-        getLastLocation()
     }
 
-    private fun returnArray(url: String) {
+    suspend private fun returnArray() {
 
+        delay(5000)
         Log.d("Alele", "Lat" + latitude.toString())
         Log.d("Alele", "Long" + longitude.toString())
 
         Log.d("Alele", "returnArray(url)")
+        val baseUrl = "http://api.weatherstack.com/current?access_key=${API_KEY}&query=${getCityName()}"
         val arrayList = mutableListOf<String>()
 
         val jsonObjectRequest = JsonObjectRequest(
             Request.Method.GET,
-            url,
+            baseUrl,
             null,
             Response.Listener { response ->
                 try {
@@ -122,11 +125,11 @@ class MainActivity : AppCompatActivity() {
                     val locationJsonObject = response.getJSONObject("location")
                     val currentJsonObject = response.getJSONObject("current")
 
-                    var locationName = locationJsonObject.getString("name")
-                    var temperature = currentJsonObject.getString("temperature")
-                    var feelsLike = currentJsonObject.getString("feelslike")
-                    var weatherDescription = currentJsonObject.getJSONArray("weather_descriptions").getString(0)
-                    var weatherIcon = currentJsonObject.getJSONArray("weather_icons").getString(0)
+                    val locationName = locationJsonObject.getString("name")
+                    val temperature = currentJsonObject.getString("temperature")
+                    val feelsLike = currentJsonObject.getString("feelslike")
+                    val weatherDescription = currentJsonObject.getJSONArray("weather_descriptions").getString(0)
+                    val weatherIcon = currentJsonObject.getJSONArray("weather_icons").getString(0)
 
                     Log.d("Alele", " locationName : ${locationName}")
                     Log.d("Alele", " temperature : ${temperature}")
@@ -176,7 +179,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // This checks if the user has granted permission to use their location
-    private fun checkPermissions(): Boolean{
+    private fun checkPermissions(): Boolean {
         if ((ActivityCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) &&
             (ActivityCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -193,22 +196,22 @@ class MainActivity : AppCompatActivity() {
             arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_ID
         )
     }
+    private fun isLocationEnabled() : Boolean{
+        val locationManager : LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val gpsProvider = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        val networkProvider = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
+        return gpsProvider || networkProvider
+    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (requestCode == PERMISSION_ID){
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 // Granted. Start getting the location information
+                Log.d("Alele", "onRequestPermissionsResult Called")
                 getLastLocation()
             }
         }
-    }
-
-    private fun isLocationEnabled() : Boolean{
-        var locationManager : LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        var gpsProvider = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        var networkProvider = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-
-        return gpsProvider || networkProvider
     }
 
     // This returns the user's location, Longitude and Latitude
@@ -225,6 +228,9 @@ class MainActivity : AppCompatActivity() {
                     else{
                         longitude = location.longitude
                         latitude = location.latitude
+
+                        setCityName(location)
+                        Log.d("Alele", "getLastLocation => ${getCityName()}")
                     }
                 }
             }
@@ -239,10 +245,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setCityName(location: Location) {
+        val lat = location.latitude
+        val lon = location.longitude
+        var geocoder: Geocoder = Geocoder(this)
+
+        val addressList = geocoder.getFromLocation(lat, lon, 1)
+        city = addressList[0].locality
+
+        Log.d("Alele", "setCityName => $city")
+    }
+
+    private fun getCityName() : String{
+        Log.d("Alele", "getCityName original => $city")
+        return city
+    }
+
     @SuppressLint("MissingPermission")
     private fun requestNewLocationData(){
         var locationRequest = LocationRequest()
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        locationRequest.priority = LocationRequest.PRIORITY_LOW_POWER
         locationRequest.interval = 0
         locationRequest.fastestInterval = 0
         locationRequest.numUpdates = 1
@@ -253,6 +275,8 @@ class MainActivity : AppCompatActivity() {
             locationCallback,
             Looper.myLooper()
         )
+
+        Log.d("Alele", "requestNewLocationData")
     }
 
     private val locationCallback = object : LocationCallback(){
@@ -260,7 +284,7 @@ class MainActivity : AppCompatActivity() {
             val result = locationResult?.lastLocation
 
             longitude = result!!.longitude
-            latitude = result!!.latitude
+            latitude = result.latitude
         }
     }
 
