@@ -34,6 +34,7 @@ import com.google.android.gms.location.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.squareup.picasso.Picasso
 import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import org.json.JSONException
 import kotlin.text.Typography.degree
@@ -45,11 +46,9 @@ class MainActivity : AppCompatActivity() {
 
     var longitude: Double = 0.0
     var latitude: Double = 0.0
-
     var city = ""
 
     private val newUserActivityRequestCode = 1
-
 
     private lateinit var locationTextView: TextView
     private lateinit var temperatureTextView: TextView
@@ -97,18 +96,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         CoroutineScope(Main).launch {
-            getLastLocation()
-            returnArray()
+            getLastLocation().also {
+                returnArray()
+            }
         }
     }
 
-    private suspend fun returnArray()  = GlobalScope.launch {
+    private suspend fun returnArray()  = CoroutineScope(IO).launch {
         delay(1000)
         Log.d("Alele", "Lat" + latitude.toString())
         Log.d("Alele", "Long" + longitude.toString())
 
         Log.d("Alele", "returnArray(url)")
-        val baseUrl = "http://api.weatherstack.com/current?access_key=${API_KEY}&query=${getCityName()}"
+        val baseUrl = "http://api.weatherstack.com/current?access_key=${API_KEY}&query=${getCityName()}&units=f"
         val arrayList = mutableListOf<String>()
 
         val jsonObjectRequest = JsonObjectRequest(
@@ -195,6 +195,7 @@ class MainActivity : AppCompatActivity() {
             arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_ID
         )
     }
+
     private fun isLocationEnabled() : Boolean{
         val locationManager : LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val gpsProvider = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
@@ -208,7 +209,14 @@ class MainActivity : AppCompatActivity() {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 // Granted. Start getting the location information
                 Log.d("Alele", "onRequestPermissionsResult Called")
-                getLastLocation()
+                requestNewLocationData()
+                CoroutineScope(Main).launch {
+                    getLastLocation().also {
+                        returnArray()
+                    }
+            }
+
+                Toast.makeText(this, longitude.toString(), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -219,7 +227,7 @@ class MainActivity : AppCompatActivity() {
         if (checkPermissions()){
             if (isLocationEnabled()){
                 mFusedLocationClient.lastLocation.addOnCompleteListener(this){ task ->
-                    var location: Location? = task.result
+                    val location: Location? = task.result
 
                     if (location == null){
                         requestNewLocationData()
@@ -244,27 +252,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setCityName(location: Location) {
-        val lat = location.latitude
-        val lon = location.longitude
-        val geocoder = Geocoder(this)
-
-        val addressList = geocoder.getFromLocation(lat, lon, 1)
-        city = addressList[0].locality
-
-        Log.d("Alele", "setCityName => $city")
-    }
-
-    private fun getCityName() : String{
-        Log.d("Alele", "getCityName original => $city")
-        return city
-    }
-
     @SuppressLint("MissingPermission")
     private fun requestNewLocationData(){
-        var locationRequest = LocationRequest()
+        val locationRequest = LocationRequest.create()
         locationRequest.priority = LocationRequest.PRIORITY_LOW_POWER
-        locationRequest.interval = 0
+        locationRequest.interval = 3600000 * 6
         locationRequest.fastestInterval = 0
         locationRequest.numUpdates = 1
 
@@ -284,7 +276,25 @@ class MainActivity : AppCompatActivity() {
 
             longitude = result!!.longitude
             latitude = result.latitude
+
+            Log.d("Alele", "locationCallback " + longitude)
         }
+    }
+
+    private fun setCityName(location: Location) {
+        val lat = location.latitude
+        val lon = location.longitude
+        val geocoder = Geocoder(this)
+
+        val addressList = geocoder.getFromLocation(lat, lon, 1)
+        city = addressList[0].locality
+
+        Log.d("Alele", "setCityName => $city")
+    }
+
+    private fun getCityName() : String{
+        Log.d("Alele", "getCityName original => $city")
+        return city
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -295,7 +305,8 @@ class MainActivity : AppCompatActivity() {
                 val user = User(it[0], it[1], it[2], Address(it[3], it[4], it[5], it[6].toInt()))
                 userViewModel.insert(user)
             }
-        } else {
+        }
+        else {
             Toast.makeText(
                 applicationContext,
                 "not saved",
