@@ -13,67 +13,82 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            tools:context=".MainActivity">
-
-            <RelativeLayout
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp">
+                android:layout_margin="8dp"
+                android:padding="4dp"
+                app:cardCornerRadius="4dp">
 
-                <!--https://www.skcript.com/svr/how-to-make-a-circular-image-view-in-android-without-third-party-library/-->
-                <de.hdodenhof.circleimageview.CircleImageView
-                    tools:src="@drawable/ic_launcher_background"
-                    android:id="@+id/image_view"
-                    android:layout_width="68dp"
-                    android:layout_height="68dp"
-                    android:layout_alignParentLeft="true"
-                    android:layout_alignParentStart="true"
-                    app:civ_border_color="#FF000000"/>
-
-                <LinearLayout
+            <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingLeft="8dp"
-                    android:paddingStart="8dp"
-                    android:layout_toRightOf="@id/image_view"
-                    android:layout_toEndOf="@id/image_view" >
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+
+                <!--Left Weather layout-->
+                <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
 
                     <TextView
-                        android:id="@+id/city_text_field"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        tools:text="Worcester"
-                        android:textSize="16sp"/>
+                            android:id="@+id/temp_text_field"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="72sp"
+                            android:textStyle="bold"
+                            android:textColor="#000000"
+                            tools:text="78&#176;"/>
 
                     <TextView
-                        android:id="@+id/feels_like_text_field"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        tools:text="feels like 20 degrees"
-                        android:textSize="16sp"/>
+                            android:id="@+id/city_text_field"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="worcester, ma"
+                            android:textSize="16sp"/>
 
-                    <TextView
-                        android:id="@+id/weather_desc_text_field"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        tools:text="Sunny"
-                        android:textSize="16sp"/>
-
-                    <TextView
-                        android:id="@+id/temp_text_field"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        tools:text="78 degrees"/>
                 </LinearLayout>
 
-            </RelativeLayout>
+                <!--Right Weather layout-->
+                <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="92dp"
+                        android:layout_marginStart="92dp"
+                        android:padding="4dp">
 
-        </LinearLayout>
+                    <!--https://www.skcript.com/svr/how-to-make-a-circular-image-view-in-android-without-third-party-library/-->
+                    <de.hdodenhof.circleimageview.CircleImageView
+                            tools:src="@drawable/ic_launcher_background"
+                            android:id="@+id/image_view"
+                            android:layout_width="70dp"
+                            android:layout_height="70dp"
+                            android:layout_alignParentLeft="true"
+                            android:layout_alignParentStart="true"
+                            app:civ_border_color="#FF000000"/>
+
+                    <TextView
+                            android:id="@+id/feels_like_text_field"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="feels like 20 degrees"
+                            android:textSize="16sp"/>
+
+                    <TextView
+                            android:id="@+id/weather_desc_text_field"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="Sunny"
+                            android:textSize="16sp"/>
+
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"

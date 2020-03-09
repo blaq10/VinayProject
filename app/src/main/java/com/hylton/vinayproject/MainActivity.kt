@@ -117,7 +117,6 @@ class MainActivity : AppCompatActivity() {
             null,
             Response.Listener { response ->
                 try {
-
                     Log.d("Alele", "Try block")
                     Log.d("Alele", response.toString())
 
@@ -171,9 +170,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun setText(input: MutableList<String>){
         locationTextView.text = getCityName()
-        temperatureTextView.text = "The temp is ${input[1]} " + degree
-        feelsLikeTextView.text = "feels like " + input[2] + degree
-        weatherDescriptionTextView.text = "Weather is " + input[3]
+        temperatureTextView.text = input[1] + degree
+        feelsLikeTextView.text = input[2] + degree
+        weatherDescriptionTextView.text = input[3]
         Picasso.get().load(input[4]).into(imageView)
     }
 
